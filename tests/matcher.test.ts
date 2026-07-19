@@ -304,10 +304,7 @@ describe("param pattern overlap (nuxt/nuxt#34715)", () => {
   it("still matches one-param payload when a longer param pattern is also registered", () => {
     expect(
       matchPatterns(
-        [
-          "/:slug/about/_payload.json",
-          "/:locale/:slug/about/_payload.json",
-        ],
+        ["/:slug/about/_payload.json", "/:locale/:slug/about/_payload.json"],
         "/travel/about/_payload.json",
       ),
     ).toEqual(["/:slug/about/_payload.json"]);
@@ -326,9 +323,7 @@ describe("param pattern overlap (nuxt/nuxt#34715)", () => {
       expect.arrayContaining(["/**", "/:slug/about/_payload.json"]),
     );
 
-    expect(
-      matchPatterns(patterns, "/en/travel/about/_payload.json"),
-    ).toEqual(
+    expect(matchPatterns(patterns, "/en/travel/about/_payload.json")).toEqual(
       expect.arrayContaining(["/**", "/:locale/:slug/about/_payload.json"]),
     );
   });
