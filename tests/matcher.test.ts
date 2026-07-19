@@ -259,18 +259,18 @@ describe("Route matcher", function () {
  * `/:slug/about` and `/:locale/:slug/about` exist. Registering the longer
  * param pattern corrupts matching for the shorter one.
  */
-describe("param pattern overlap (nuxt/nuxt#34715)", () => {
-  const matchPatterns = (patterns: string[], path: string): string[] => {
-    const matcher = toRouteMatcher(
-      createRouter({
-        routes: Object.fromEntries(
-          patterns.map((pattern) => [pattern, { pattern }]),
-        ),
-      }),
-    );
-    return matcher.matchAll(path).map((r) => r.pattern as string);
-  };
+const matchPatterns = (patterns: string[], path: string): string[] => {
+  const matcher = toRouteMatcher(
+    createRouter({
+      routes: Object.fromEntries(
+        patterns.map((pattern) => [pattern, { pattern }]),
+      ),
+    }),
+  );
+  return matcher.matchAll(path).map((r) => r.pattern as string);
+};
 
+describe("param pattern overlap (nuxt/nuxt#34715)", () => {
   it("matches one-param patterns in isolation", () => {
     expect(matchPatterns(["/:slug/about"], "/travel/about")).toEqual([
       "/:slug/about",
