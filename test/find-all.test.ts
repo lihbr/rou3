@@ -1,11 +1,11 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createRouter, formatTree } from "./_utils.ts";
 import {
+  type RouterContext,
   addRoute,
   compareRoutes,
   createRouter as createEmptyRouter,
   findAllRoutes,
-  type RouterContext,
 } from "../src/index.ts";
 import { compileRouter } from "../src/compiler.ts";
 import { format } from "oxfmt";
@@ -493,5 +493,67 @@ describe("matcher: named", () => {
         "/foo/:bar/:qaz",
       ]
     `);
+  });
+});
+
+/**
+ * Regression for nuxt/nuxt#34715.
+ *
+ * Nuxt generates payload routeRules by appending `/_payload.json` to cached
+ * rules. With i18n `prefix_and_default`, both `/:slug/about` and
+ * `/:locale/:slug/about` exist. In radix3, registering the longer param
+ * pattern broke matching for the shorter one; rou3 must keep both working.
+ */
+describe("param pattern overlap (nuxt/nuxt#34715)", () => {
+  const matchPatterns = (patterns: string[], path: string) =>
+    _findAllRoutes(createRouter(patterns), "GET", path);
+
+  it("matches one-param patterns in isolation", () => {
+    expect(matchPatterns(["/:slug/about"], "/travel/about")).toEqual(["/:slug/about"]);
+    expect(matchPatterns(["/:slug/about/_payload.json"], "/travel/about/_payload.json")).toEqual([
+      "/:slug/about/_payload.json",
+    ]);
+  });
+
+  it("matches two-param patterns in isolation", () => {
+    expect(
+      matchPatterns(["/:locale/:slug/about/_payload.json"], "/en/travel/about/_payload.json"),
+    ).toEqual(["/:locale/:slug/about/_payload.json"]);
+  });
+
+  it("keeps matching one-param payload when registered with /**", () => {
+    expect(
+      matchPatterns(
+        ["/**", "/:slug/about", "/:slug/about/_payload.json"],
+        "/travel/about/_payload.json",
+      ),
+    ).toEqual(["/**", "/:slug/about/_payload.json"]);
+  });
+
+  it("still matches one-param payload when a longer param pattern is also registered", () => {
+    expect(
+      matchPatterns(
+        ["/:slug/about/_payload.json", "/:locale/:slug/about/_payload.json"],
+        "/travel/about/_payload.json",
+      ),
+    ).toEqual(["/:slug/about/_payload.json"]);
+  });
+
+  it("matches Nuxt-style routeRules for both one- and two-param payload URLs", () => {
+    const patterns = [
+      "/**",
+      "/:slug/about",
+      "/:slug/about/_payload.json",
+      "/:locale/:slug/about",
+      "/:locale/:slug/about/_payload.json",
+    ];
+
+    expect(matchPatterns(patterns, "/travel/about/_payload.json")).toEqual(
+      expect.arrayContaining(["/**", "/:slug/about/_payload.json"]),
+    );
+
+    expect(matchPatterns(patterns, "/en/travel/about/_payload.json")).toEqual(
+      expect.arrayContaining(["/**", "/:locale/:slug/about/_payload.json"]),
+    );
   });
 });
