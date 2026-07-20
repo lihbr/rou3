@@ -12,6 +12,7 @@ on:
       - main
       - v1
       - v2
+      - radix3
 
 jobs:
   ci:
